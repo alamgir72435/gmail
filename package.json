@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "googleapis": "^39.2.0"
+    "googleapis": "^39.2.0",
+    "mongoose": "^5.10.7",
+    "puppeteer": "^5.3.1"
   }
 }
